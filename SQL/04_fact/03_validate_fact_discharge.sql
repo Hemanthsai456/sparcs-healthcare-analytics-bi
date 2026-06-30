@@ -3,6 +3,13 @@
 SELECT COUNT(*)
 FROM warehouse.fact_discharge;
 
+SELECT
+    date_key,
+    COUNT(*) AS records
+FROM warehouse.fact_discharge
+GROUP BY date_key
+ORDER BY date_key;
+
 -- Validations
 
 SELECT
@@ -12,7 +19,8 @@ SELECT
     SUM(CASE WHEN procedure_key = 0 THEN 1 ELSE 0 END) AS unknown_procedure,
     SUM(CASE WHEN severity_key = 0 THEN 1 ELSE 0 END) AS unknown_severity,
     SUM(CASE WHEN payment_key = 0 THEN 1 ELSE 0 END) AS unknown_payment,
-    SUM(CASE WHEN admission_key = 0 THEN 1 ELSE 0 END) AS unknown_admission
+    SUM(CASE WHEN admission_key = 0 THEN 1 ELSE 0 END) AS unknown_admission,
+    SUM(CASE WHEN date_key = 0 THEN 1 ELSE 0 END) AS unknown_date
 FROM warehouse.fact_discharge;
 
 SELECT COUNT(*) AS unknown_hospital
@@ -42,3 +50,13 @@ WHERE payment_key = 0;
 SELECT COUNT(*) AS unknown_admission
 FROM warehouse.fact_discharge
 WHERE admission_key = 0;
+
+SELECT COUNT(*) AS unknown_date
+FROM warehouse.fact_discharge
+WHERE date_key = 0;
+
+SELECT
+    MIN(date_key),
+    MAX(date_key),
+    COUNT(DISTINCT date_key)
+FROM warehouse.fact_discharge;

@@ -7,15 +7,12 @@ Domain:
 Hospital Operations Analysis
 
 Purpose:
-Analyze admission patterns,
-patient flow,
-LOS,
-emergency utilization,
-and discharge outcomes.
+Analyze admission patterns, patient
+disposition, resource utilization, and
+operational efficiency.
 
 Data Source:
 analytics.v_operations
-
 ====================================================
 */
 
@@ -24,19 +21,22 @@ analytics.v_operations
 ====================================================
 Question 1
 
-What is the distribution of admission types?
+Which admission types account for the
+highest number of hospital admissions?
 
 Business Value:
-Shows how hospitals receive patients
-(Emergency, Elective, Urgent, etc.).
+Identifies the primary sources of
+hospital demand.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     type_of_admission,
-    SUM(admissions) AS admissions
+    admissions
+
 FROM analytics.v_operations
-GROUP BY type_of_admission
+
 ORDER BY admissions DESC;
 
 
@@ -45,20 +45,28 @@ ORDER BY admissions DESC;
 ====================================================
 Question 2
 
-What is the Emergency vs Non-Emergency
-admission distribution?
+Which admission types have the longest
+average length of stay?
 
 Business Value:
-Measures dependency on emergency services.
+Highlights admission categories requiring
+extended hospital resources.
 ====================================================
 */
 
 SELECT
-    emergency_department_indicator,
-    SUM(admissions) AS admissions
+    type_of_admission,
+
+    ROUND(
+        AVG(avg_los),
+        2
+    ) AS avg_length_of_stay
+
 FROM analytics.v_operations
-GROUP BY emergency_department_indicator
-ORDER BY admissions DESC;
+
+GROUP BY type_of_admission
+
+ORDER BY avg_length_of_stay DESC;
 
 
 
@@ -66,21 +74,28 @@ ORDER BY admissions DESC;
 ====================================================
 Question 3
 
-Which admission types have the longest
-average length of stay?
+Which patient dispositions generate the
+highest treatment costs?
 
 Business Value:
-Identifies admission categories requiring
-extended hospital resources.
+Identifies discharge outcomes associated
+with the greatest healthcare expenditure.
 ====================================================
 */
 
 SELECT
-    type_of_admission,
-    ROUND(AVG(avg_los),2) AS avg_los
+    patient_disposition,
+
+    ROUND(
+        SUM(total_costs),
+        2
+    ) AS total_costs
+
 FROM analytics.v_operations
-GROUP BY type_of_admission
-ORDER BY avg_los DESC;
+
+GROUP BY patient_disposition
+
+ORDER BY total_costs DESC;
 
 
 
@@ -88,19 +103,27 @@ ORDER BY avg_los DESC;
 ====================================================
 Question 4
 
-Which admission types generate the highest
-total charges?
+Which admission types generate the
+highest treatment charges?
 
 Business Value:
-Identifies operational areas driving revenue.
+Measures the financial contribution of
+different admission categories.
 ====================================================
 */
 
 SELECT
     type_of_admission,
-    SUM(total_charges) AS total_charges
+
+    ROUND(
+        SUM(total_charges),
+        2
+    ) AS total_charges
+
 FROM analytics.v_operations
+
 GROUP BY type_of_admission
+
 ORDER BY total_charges DESC;
 
 
@@ -109,21 +132,35 @@ ORDER BY total_charges DESC;
 ====================================================
 Question 5
 
-Which admission types generate the highest
-total costs?
+Which admission types have above-average
+length of stay?
 
 Business Value:
-Identifies operational areas consuming
-the most resources.
+Identifies operational areas where
+patients remain hospitalized longer
+than average.
 ====================================================
 */
 
 SELECT
     type_of_admission,
-    SUM(total_costs) AS total_costs
+
+    ROUND(
+        AVG(avg_los),
+        2
+    ) AS avg_length_of_stay
+
 FROM analytics.v_operations
+
 GROUP BY type_of_admission
-ORDER BY total_costs DESC;
+
+HAVING AVG(avg_los) >
+(
+    SELECT AVG(avg_los)
+    FROM analytics.v_operations
+)
+
+ORDER BY avg_length_of_stay DESC;
 
 
 
@@ -131,21 +168,31 @@ ORDER BY total_costs DESC;
 ====================================================
 Question 6
 
-What are the most common discharge dispositions?
+How do admission types rank by patient
+volume each year?
 
 Business Value:
-Helps understand patient outcomes and
-post-discharge care patterns.
+Ranks admission categories according to
+annual hospital demand.
 ====================================================
 */
 
 SELECT
-    patient_disposition,
-    SUM(admissions) AS admissions
+    discharge_year,
+    type_of_admission,
+    admissions,
+
+    RANK() OVER
+    (
+        PARTITION BY discharge_year
+        ORDER BY admissions DESC
+    ) AS admission_rank
+
 FROM analytics.v_operations
-GROUP BY patient_disposition
-ORDER BY admissions DESC
-LIMIT 10;
+
+ORDER BY
+    discharge_year,
+    admission_rank;
 
 
 
@@ -153,108 +200,26 @@ LIMIT 10;
 ====================================================
 Question 7
 
-Which discharge dispositions have the
-longest average LOS?
+Which patient disposition groups belong
+to the highest treatment cost quartile?
 
 Business Value:
-Identifies patient outcomes associated
-with prolonged hospital stays.
+Segments discharge outcomes according
+to healthcare resource consumption.
 ====================================================
 */
 
 SELECT
     patient_disposition,
-    ROUND(AVG(avg_los),2) AS avg_los
-FROM analytics.v_operations
-GROUP BY patient_disposition
-ORDER BY avg_los DESC
-LIMIT 10;
+    total_costs,
 
-
-
-/*
-====================================================
-Question 8
-
-What percentage of admissions result in
-each discharge disposition?
-
-Business Value:
-Provides insight into patient outcomes and
-post-discharge care requirements.
-====================================================
-*/
-
-SELECT
-    patient_disposition,
-
-    ROUND(
-        100.0 * SUM(admissions) /
-        SUM(SUM(admissions)) OVER (),
-        2
-    ) AS disposition_percentage
+    NTILE(4) OVER
+    (
+        ORDER BY total_costs DESC
+    ) AS cost_quartile
 
 FROM analytics.v_operations
 
-GROUP BY patient_disposition
-
-ORDER BY disposition_percentage DESC;
-
-
-
-/*
-====================================================
-Question 9
-
-Which admission types have the highest
-average charge per admission?
-
-Business Value:
-Measures revenue intensity by admission type.
-====================================================
-*/
-
-SELECT
-    type_of_admission,
-
-    ROUND(
-        SUM(total_charges) /
-        NULLIF(SUM(admissions),0),
-        2
-    ) AS avg_charge_per_admission
-
-FROM analytics.v_operations
-
-GROUP BY type_of_admission
-
-ORDER BY avg_charge_per_admission DESC;
-
-
-
-/*
-====================================================
-Question 10
-
-Which admission types have the highest
-average cost per admission?
-
-Business Value:
-Measures resource utilization intensity
-by admission type.
-====================================================
-*/
-
-SELECT
-    type_of_admission,
-
-    ROUND(
-        SUM(total_costs) /
-        NULLIF(SUM(admissions),0),
-        2
-    ) AS avg_cost_per_admission
-
-FROM analytics.v_operations
-
-GROUP BY type_of_admission
-
-ORDER BY avg_cost_per_admission DESC;
+ORDER BY
+    cost_quartile,
+    total_costs DESC;

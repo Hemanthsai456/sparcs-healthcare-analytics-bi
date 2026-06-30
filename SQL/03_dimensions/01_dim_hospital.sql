@@ -12,9 +12,14 @@ CREATE TABLE warehouse.dim_hospital (
     health_service_area VARCHAR(50)
 );
 
+ALTER TABLE warehouse.dim_hospital
+ADD CONSTRAINT uq_dim_hospital
+UNIQUE (facility_id);
+
 -- Insert data into dim_hospital table
 
-INSERT INTO warehouse.dim_hospital (
+INSERT INTO warehouse.dim_hospital
+(
     facility_id,
     facility_name,
     operating_certificate_number,
@@ -22,13 +27,22 @@ INSERT INTO warehouse.dim_hospital (
     health_service_area
 )
 SELECT DISTINCT
-    permanent_facility_id::INTEGER,
-    facility_name,
-    operating_certificate_number,
-    hospital_county,
-    health_service_area
-FROM staging.sparcs_raw
-WHERE permanent_facility_id IS NOT NULL;
+    NULLIF(TRIM(s.permanent_facility_id), '')::NUMERIC::INTEGER,
+
+    NULLIF(TRIM(s.facility_name), ''),
+
+    NULLIF(TRIM(s.operating_certificate_number), ''),
+
+    NULLIF(TRIM(s.hospital_county), ''),
+
+    NULLIF(TRIM(s.health_service_area), '')
+
+FROM staging.sparcs_raw s
+
+WHERE s.permanent_facility_id IS NOT NULL
+
+ON CONFLICT (facility_id)
+DO NOTHING;
 
 -- Check data is inserted successfully 
 SELECT COUNT(*) FROM warehouse.dim_hospital;

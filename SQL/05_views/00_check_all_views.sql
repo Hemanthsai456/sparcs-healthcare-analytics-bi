@@ -14,8 +14,8 @@ SELECT * FROM analytics.v_risk_analysis;
 
 SELECT * FROM analytics.v_operations LIMIT 10;
 
-SELECT * FROM analytics.v_clinical_detail LIMIT 10;
+SELECT * FROM analytics.v_yearly_summary LIMIT 10;
 
-SELECT * FROM analytics.v_hospital_clinical LIMIT 10;
+SELECT * FROM analytics.v_hospital_trends LIMIT 10;
 
-SELECT * FROM analytics.v_financial_detail LIMIT 10;
+SELECT * FROM analytics.v_yoy_growth LIMIT 10;

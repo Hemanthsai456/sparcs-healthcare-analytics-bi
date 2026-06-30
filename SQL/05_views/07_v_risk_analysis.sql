@@ -2,6 +2,8 @@ CREATE OR REPLACE VIEW analytics.v_risk_analysis AS
 
 SELECT
 
+    dt.discharge_year,
+
     s.apr_severity_of_illness_description,
 
     s.apr_risk_of_mortality,
@@ -19,6 +21,10 @@ FROM warehouse.fact_discharge f
 JOIN warehouse.dim_severity s
     ON f.severity_key = s.severity_key
 
+JOIN warehouse.dim_date dt
+    ON f.date_key = dt.date_key
+
 GROUP BY
+    dt.discharge_year,
     s.apr_severity_of_illness_description,
     s.apr_risk_of_mortality;

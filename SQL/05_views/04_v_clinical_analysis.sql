@@ -1,7 +1,7 @@
 CREATE OR REPLACE VIEW analytics.v_clinical_analysis AS
 
 SELECT
-
+    dt.discharge_year,
     d.ccsr_diagnosis_code,
     d.ccsr_diagnosis_description,
 
@@ -36,7 +36,11 @@ JOIN warehouse.dim_diagnosis d
 JOIN warehouse.dim_severity s
     ON f.severity_key = s.severity_key
 
+JOIN warehouse.dim_date dt
+    ON f.date_key = dt.date_key
+
 GROUP BY
+    dt.discharge_year,
     d.ccsr_diagnosis_code,
     d.ccsr_diagnosis_description,
     d.apr_drg_code,

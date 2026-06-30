@@ -7,13 +7,12 @@ Domain:
 Hospital Performance Analysis
 
 Purpose:
-Analyze hospital admissions, costs, charges,
-efficiency, severity, and mortality trends.
+Evaluate hospital performance, financial
+efficiency, patient volume, emergency care,
+and operational effectiveness.
 
 Data Source:
 analytics.v_hospital_performance
-analytics.v_hospital_clinical
-
 ====================================================
 */
 
@@ -22,20 +21,26 @@ analytics.v_hospital_clinical
 ====================================================
 Question 1
 
-Which hospitals handle the highest number of admissions?
+Which hospitals handle the highest
+patient volume?
 
 Business Value:
-Identifies the busiest hospitals and helps evaluate
-capacity utilization.
+Identifies the busiest hospitals for
+capacity planning and resource allocation.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     facility_name,
+    health_service_area,
     admissions
+
 FROM analytics.v_hospital_performance
-ORDER BY admissions DESC
-LIMIT 10;
+
+ORDER BY
+    admissions DESC,
+    facility_name;
 
 
 
@@ -43,19 +48,23 @@ LIMIT 10;
 ====================================================
 Question 2
 
-Which hospitals generate the highest total charges?
+Which hospitals generate the highest
+total charges?
 
 Business Value:
-Identifies hospitals producing the largest revenue.
+Identifies hospitals contributing the
+largest share of healthcare revenue.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     facility_name,
     total_charges
+
 FROM analytics.v_hospital_performance
-ORDER BY total_charges DESC
-LIMIT 10;
+
+ORDER BY total_charges DESC;
 
 
 
@@ -63,19 +72,23 @@ LIMIT 10;
 ====================================================
 Question 3
 
-Which hospitals generate the highest total costs?
+Which hospitals have the highest
+financial efficiency?
 
 Business Value:
-Highlights hospitals consuming the largest resources.
+Measures how effectively hospitals
+convert costs into charges.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     facility_name,
-    total_costs
+    charge_cost_ratio
+
 FROM analytics.v_hospital_performance
-ORDER BY total_costs DESC
-LIMIT 10;
+
+ORDER BY charge_cost_ratio DESC;
 
 
 
@@ -83,19 +96,31 @@ LIMIT 10;
 ====================================================
 Question 4
 
-Which hospitals have the highest emergency admission rates?
+Which hospitals have above-average
+length of stay?
 
 Business Value:
-Measures dependence on emergency services.
+Highlights hospitals where patients stay
+longer than the statewide average,
+indicating potential operational issues
+or greater case complexity.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     facility_name,
-    emergency_rate_percent
+    avg_los
+
 FROM analytics.v_hospital_performance
-ORDER BY emergency_rate_percent DESC
-LIMIT 10;
+
+WHERE avg_los >
+(
+    SELECT AVG(avg_los)
+    FROM analytics.v_hospital_performance
+)
+
+ORDER BY avg_los DESC;
 
 
 
@@ -103,20 +128,23 @@ LIMIT 10;
 ====================================================
 Question 5
 
-Which hospitals have the longest average length of stay?
+Which hospitals have the highest
+emergency admission rate?
 
 Business Value:
-Helps identify potential operational inefficiencies
-or highly complex patient populations.
+Identifies hospitals with the greatest
+emergency care burden.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     facility_name,
-    avg_los
+    emergency_rate_percent
+
 FROM analytics.v_hospital_performance
-ORDER BY avg_los DESC
-LIMIT 10;
+
+ORDER BY emergency_rate_percent DESC;
 
 
 
@@ -124,19 +152,31 @@ LIMIT 10;
 ====================================================
 Question 6
 
-Which hospitals have the highest charge-to-cost ratio?
+How do hospitals rank by patient
+admissions within each year?
 
 Business Value:
-Measures financial efficiency and profitability.
+Ranks hospitals by annual patient volume
+to identify market leaders.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     facility_name,
-    charge_cost_ratio
+    admissions,
+
+    RANK() OVER
+    (
+        PARTITION BY discharge_year
+        ORDER BY admissions DESC
+    ) AS admission_rank
+
 FROM analytics.v_hospital_performance
-ORDER BY charge_cost_ratio DESC
-LIMIT 10;
+
+ORDER BY
+    discharge_year,
+    admission_rank;
 
 
 
@@ -144,122 +184,30 @@ LIMIT 10;
 ====================================================
 Question 7
 
-Which hospitals treat the highest percentage
-of extreme severity cases?
+Which hospitals belong to the highest
+financial performance quartile based on
+total charges?
 
 Business Value:
-Identifies hospitals managing highly complex patients.
+Segments hospitals into performance
+groups for benchmarking.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     facility_name,
+    total_charges,
 
-    ROUND(
-        100.0 *
-        SUM(
-            CASE
-                WHEN apr_severity_of_illness_description = 'Extreme'
-                THEN 1
-                ELSE 0
-            END
-        ) / COUNT(*),
-        2
-    ) AS extreme_severity_percent
-
-FROM analytics.v_hospital_clinical
-
-GROUP BY facility_name
-
-ORDER BY extreme_severity_percent DESC
-LIMIT 10;
-
-
-
-/*
-====================================================
-Question 8
-
-Which hospitals treat the highest percentage
-of extreme mortality-risk cases?
-
-Business Value:
-Identifies hospitals handling the most critical cases.
-====================================================
-*/
-
-SELECT
-    facility_name,
-
-    ROUND(
-        100.0 *
-        SUM(
-            CASE
-                WHEN apr_risk_of_mortality = 'Extreme'
-                THEN 1
-                ELSE 0
-            END
-        ) / COUNT(*),
-        2
-    ) AS extreme_mortality_percent
-
-FROM analytics.v_hospital_clinical
-
-GROUP BY facility_name
-
-ORDER BY extreme_mortality_percent DESC
-LIMIT 10;
-
-
-
-/*
-====================================================
-Question 9
-
-Which hospitals have the highest average charge
-per admission?
-
-Business Value:
-Measures revenue intensity per patient.
-====================================================
-*/
-
-SELECT
-    facility_name,
-
-    ROUND(
-        total_charges / admissions,
-        2
-    ) AS avg_charge_per_admission
+    NTILE(4) OVER
+    (
+        PARTITION BY discharge_year
+        ORDER BY total_charges DESC
+    ) AS revenue_quartile
 
 FROM analytics.v_hospital_performance
 
-ORDER BY avg_charge_per_admission DESC
-LIMIT 10;
-
-
-
-/*
-====================================================
-Question 10
-
-Which hospitals have the highest average cost
-per admission?
-
-Business Value:
-Measures resource utilization intensity.
-====================================================
-*/
-
-SELECT
-    facility_name,
-
-    ROUND(
-        total_costs / admissions,
-        2
-    ) AS avg_cost_per_admission
-
-FROM analytics.v_hospital_performance
-
-ORDER BY avg_cost_per_admission DESC
-LIMIT 10;
+ORDER BY
+    discharge_year,
+    revenue_quartile,
+    total_charges DESC;

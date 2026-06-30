@@ -23,18 +23,11 @@ ON warehouse.fact_discharge(payment_key);
 CREATE INDEX idx_fact_admission
 ON warehouse.fact_discharge(admission_key);
 
-CREATE INDEX idx_fact_hospital_diagnosis
-ON warehouse.fact_discharge(hospital_key, diagnosis_key);
+CREATE INDEX idx_fact_date
+ON warehouse.fact_discharge(date_key);
 
 /* =========================
    DIMENSION BUSINESS KEY INDEXES
    ========================= */
 
-CREATE INDEX idx_dim_hospital_facility_id
-ON warehouse.dim_hospital(facility_id);
-
-CREATE INDEX idx_dim_diagnosis_ccsr
-ON warehouse.dim_diagnosis(ccsr_diagnosis_code);
-
-CREATE INDEX idx_dim_procedure_ccsr
-ON warehouse.dim_procedure(ccsr_procedure_code);
+-- ALL DIMENSION TABLES HAVE BUSINESS KEYS THAT ARE USED TO JOIN TO THE FACT TABLE. SO SEPARATE EXPLICIT INDEXING IS NOT REQUIRED.

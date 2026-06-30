@@ -7,13 +7,12 @@ Domain:
 Clinical Performance Analysis
 
 Purpose:
-Analyze diagnosis volume, severity,
-mortality, LOS, costs, and charges.
+Analyze diagnoses, severity of illness,
+mortality risk, resource utilization,
+and clinical performance.
 
 Data Source:
 analytics.v_clinical_analysis
-analytics.v_clinical_detail
-
 ====================================================
 */
 
@@ -22,20 +21,25 @@ analytics.v_clinical_detail
 ====================================================
 Question 1
 
-What are the most common diagnoses?
+Which diagnosis groups account for the
+highest number of hospital admissions?
 
 Business Value:
-Identifies the largest drivers of hospital volume.
+Identifies the most frequently treated
+clinical conditions.
 ====================================================
 */
 
 SELECT
-    ccsr_diagnosis_description,
-    SUM(admissions) AS admissions
+    discharge_year,
+    apr_drg_description,
+    admissions
+
 FROM analytics.v_clinical_analysis
-GROUP BY ccsr_diagnosis_description
-ORDER BY admissions DESC
-LIMIT 10;
+
+ORDER BY
+    admissions DESC,
+    apr_drg_description;
 
 
 
@@ -43,20 +47,31 @@ LIMIT 10;
 ====================================================
 Question 2
 
-Which diagnoses generate the highest total charges?
+Which diagnosis groups generate the
+highest treatment costs?
 
 Business Value:
-Identifies diagnoses driving healthcare spending.
+Identifies diagnoses that consume the
+largest share of healthcare resources.
 ====================================================
 */
 
 SELECT
-    ccsr_diagnosis_description,
-    SUM(total_charges) AS total_charges
+    discharge_year,
+    apr_drg_description,
+
+    ROUND(
+        SUM(total_costs),
+        2
+    ) AS total_costs
+
 FROM analytics.v_clinical_analysis
-GROUP BY ccsr_diagnosis_description
-ORDER BY total_charges DESC
-LIMIT 10;
+
+GROUP BY
+    discharge_year,
+    apr_drg_description
+
+ORDER BY total_costs DESC;
 
 
 
@@ -64,20 +79,29 @@ LIMIT 10;
 ====================================================
 Question 3
 
-Which diagnoses generate the highest total costs?
+Which severity levels have the longest
+average length of stay?
 
 Business Value:
-Identifies the most resource-intensive conditions.
+Evaluates the relationship between
+clinical severity and hospital utilization.
 ====================================================
 */
 
 SELECT
-    ccsr_diagnosis_description,
-    SUM(total_costs) AS total_costs
+    apr_severity_of_illness_description,
+
+    ROUND(
+        AVG(avg_los),
+        2
+    ) AS avg_length_of_stay
+
 FROM analytics.v_clinical_analysis
-GROUP BY ccsr_diagnosis_description
-ORDER BY total_costs DESC
-LIMIT 10;
+
+GROUP BY
+    apr_severity_of_illness_description
+
+ORDER BY avg_length_of_stay DESC;
 
 
 
@@ -85,21 +109,29 @@ LIMIT 10;
 ====================================================
 Question 4
 
-Which diagnoses have the longest average
-length of stay?
+Which mortality risk categories incur
+the highest healthcare costs?
 
 Business Value:
-Highlights conditions requiring prolonged care.
+Measures the financial impact of
+different mortality risk levels.
 ====================================================
 */
 
 SELECT
-    ccsr_diagnosis_description,
-    ROUND(AVG(avg_los),2) AS avg_los
+    apr_risk_of_mortality,
+
+    ROUND(
+        SUM(total_costs),
+        2
+    ) AS total_costs
+
 FROM analytics.v_clinical_analysis
-GROUP BY ccsr_diagnosis_description
-ORDER BY avg_los DESC
-LIMIT 10;
+
+GROUP BY
+    apr_risk_of_mortality
+
+ORDER BY total_costs DESC;
 
 
 
@@ -107,35 +139,41 @@ LIMIT 10;
 ====================================================
 Question 5
 
-Which diagnoses have the highest percentage
-of extreme mortality cases?
+Which diagnosis groups have above-average
+charge-to-cost efficiency?
 
 Business Value:
-Identifies the most life-threatening conditions.
+Identifies clinical services generating
+higher financial returns than average.
 ====================================================
 */
 
 SELECT
-    ccsr_diagnosis_description,
+    apr_drg_description,
 
     ROUND(
-        100.0 *
-        SUM(
-            CASE
-                WHEN apr_risk_of_mortality = 'Extreme'
-                THEN 1
-                ELSE 0
-            END
-        ) / COUNT(*),
+        SUM(total_charges) /
+        NULLIF(SUM(total_costs),0),
         2
-    ) AS extreme_mortality_percent
+    ) AS charge_cost_ratio
 
-FROM analytics.v_clinical_detail
+FROM analytics.v_clinical_analysis
 
-GROUP BY ccsr_diagnosis_description
+GROUP BY
+    apr_drg_description
 
-ORDER BY extreme_mortality_percent DESC
-LIMIT 10;
+HAVING
+    SUM(total_charges) /
+    NULLIF(SUM(total_costs),0)
+    >
+    (
+        SELECT
+            SUM(total_charges) /
+            NULLIF(SUM(total_costs),0)
+        FROM analytics.v_clinical_analysis
+    )
+
+ORDER BY charge_cost_ratio DESC;
 
 
 
@@ -143,35 +181,31 @@ LIMIT 10;
 ====================================================
 Question 6
 
-Which diagnoses have the highest percentage
-of extreme severity cases?
+How do diagnosis groups rank by total
+hospital admissions each year?
 
 Business Value:
-Identifies clinically complex conditions.
+Ranks diagnoses according to annual
+patient demand.
 ====================================================
 */
 
 SELECT
-    ccsr_diagnosis_description,
+    discharge_year,
+    apr_drg_description,
+    admissions,
 
-    ROUND(
-        100.0 *
-        SUM(
-            CASE
-                WHEN apr_severity_of_illness_description = 'Extreme'
-                THEN 1
-                ELSE 0
-            END
-        ) / COUNT(*),
-        2
-    ) AS extreme_severity_percent
+    RANK() OVER
+    (
+        PARTITION BY discharge_year
+        ORDER BY admissions DESC
+    ) AS admission_rank
 
-FROM analytics.v_clinical_detail
+FROM analytics.v_clinical_analysis
 
-GROUP BY ccsr_diagnosis_description
-
-ORDER BY extreme_severity_percent DESC
-LIMIT 10;
+ORDER BY
+    discharge_year,
+    admission_rank;
 
 
 
@@ -179,111 +213,31 @@ LIMIT 10;
 ====================================================
 Question 7
 
-What are the most common diagnoses
-among elderly patients?
+Which diagnosis groups belong to the
+highest treatment cost quartile?
 
 Business Value:
-Helps understand disease burden
-in older populations.
+Segments diagnoses according to
+resource consumption for benchmarking
+and financial planning.
 ====================================================
 */
 
 SELECT
-    ccsr_diagnosis_description,
-    COUNT(*) AS admissions
+    discharge_year,
+    apr_drg_description,
 
-FROM analytics.v_clinical_detail
+    ROUND(total_costs,2) AS total_costs,
 
-WHERE age_group = '70 or Older'
-
-GROUP BY ccsr_diagnosis_description
-
-ORDER BY admissions DESC
-LIMIT 10;
-
-
-
-/*
-====================================================
-Question 8
-
-What are the most common diagnoses
-among pediatric patients?
-
-Business Value:
-Supports child healthcare planning.
-====================================================
-*/
-
-SELECT
-    ccsr_diagnosis_description,
-    COUNT(*) AS admissions
-
-FROM analytics.v_clinical_detail
-
-WHERE age_group = '0 to 17'
-
-GROUP BY ccsr_diagnosis_description
-
-ORDER BY admissions DESC
-LIMIT 10;
-
-
-
-/*
-====================================================
-Question 9
-
-Which diagnoses have the highest
-average charge per admission?
-
-Business Value:
-Measures financial intensity per case.
-====================================================
-*/
-
-SELECT
-    ccsr_diagnosis_description,
-
-    ROUND(
-        SUM(total_charges) /
-        NULLIF(SUM(admissions),0),
-        2
-    ) AS avg_charge_per_admission
+    NTILE(4) OVER
+    (
+        PARTITION BY discharge_year
+        ORDER BY total_costs DESC
+    ) AS cost_quartile
 
 FROM analytics.v_clinical_analysis
 
-GROUP BY ccsr_diagnosis_description
-
-ORDER BY avg_charge_per_admission DESC
-LIMIT 10;
-
-
-
-/*
-====================================================
-Question 10
-
-Which diagnoses have the highest
-average cost per admission?
-
-Business Value:
-Measures resource utilization per case.
-====================================================
-*/
-
-SELECT
-    ccsr_diagnosis_description,
-
-    ROUND(
-        SUM(total_costs) /
-        NULLIF(SUM(admissions),0),
-        2
-    ) AS avg_cost_per_admission
-
-FROM analytics.v_clinical_analysis
-
-GROUP BY ccsr_diagnosis_description
-
-ORDER BY avg_cost_per_admission DESC
-LIMIT 10;
+ORDER BY
+    discharge_year,
+    cost_quartile,
+    total_costs DESC;

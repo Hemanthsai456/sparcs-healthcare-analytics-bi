@@ -2,6 +2,8 @@ CREATE OR REPLACE VIEW analytics.v_geographic_analysis AS
 
 SELECT
 
+    dt.discharge_year,
+
     h.health_service_area,
 
     h.hospital_county,
@@ -19,6 +21,10 @@ FROM warehouse.fact_discharge f
 JOIN warehouse.dim_hospital h
     ON f.hospital_key = h.hospital_key
 
+JOIN warehouse.dim_date dt 
+    ON f.date_key = dt.date_key
+
 GROUP BY
+    dt.discharge_year,
     h.health_service_area,
     h.hospital_county;

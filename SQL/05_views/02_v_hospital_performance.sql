@@ -2,6 +2,8 @@ CREATE OR REPLACE VIEW analytics.v_hospital_performance AS
 
 SELECT
 
+    dt.discharge_year,
+
     h.facility_id,
 
     h.facility_name,
@@ -44,7 +46,11 @@ JOIN warehouse.dim_hospital h
 JOIN warehouse.dim_admission a
     ON f.admission_key = a.admission_key
 
+JOIN warehouse.dim_date dt
+    ON f.date_key = dt.date_key
+
 GROUP BY
+    dt.discharge_year,
     h.facility_id,
     h.facility_name,
     h.hospital_county,

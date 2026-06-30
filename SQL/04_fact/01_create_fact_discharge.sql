@@ -10,9 +10,9 @@ CREATE TABLE warehouse.fact_discharge
     payment_key INTEGER NOT NULL,
     admission_key INTEGER NOT NULL,
 
-    discharge_year SMALLINT NOT NULL,
+    date_key SMALLINT NOT NULL,
 
-    length_of_stay_raw VARCHAR(5),
+    length_of_stay_raw VARCHAR(10),
 
     length_of_stay_days INTEGER NOT NULL,
 
@@ -56,5 +56,9 @@ CREATE TABLE warehouse.fact_discharge
         CHECK (length_of_stay_days >= 0),
 
     CONSTRAINT chk_admission_count
-        CHECK (admission_count = 1)
+        CHECK (admission_count = 1),
+        
+    CONSTRAINT fk_fact_date
+        FOREIGN KEY (date_key)
+        REFERENCES warehouse.dim_date(date_key)
 );

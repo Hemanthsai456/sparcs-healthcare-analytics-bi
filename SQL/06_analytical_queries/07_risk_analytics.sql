@@ -4,17 +4,15 @@ RISK ANALYTICS
 ====================================================
 
 Domain:
-Severity & Mortality Risk Analysis
+Clinical Risk Analysis
 
 Purpose:
-Analyze severity levels,
-mortality risk,
-resource utilization,
-and patient complexity.
+Analyze severity of illness, mortality
+risk, healthcare utilization, and
+financial impact across patient risk groups.
 
 Data Source:
 analytics.v_risk_analysis
-
 ====================================================
 */
 
@@ -23,19 +21,22 @@ analytics.v_risk_analysis
 ====================================================
 Question 1
 
-What is the distribution of severity categories?
+Which severity levels account for the
+highest number of hospital admissions?
 
 Business Value:
-Provides an overview of patient complexity
-across all admissions.
+Identifies patient groups requiring the
+greatest volume of hospital care.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     apr_severity_of_illness_description,
-    SUM(admissions) AS admissions
+    admissions
+
 FROM analytics.v_risk_analysis
-GROUP BY apr_severity_of_illness_description
+
 ORDER BY admissions DESC;
 
 
@@ -44,40 +45,46 @@ ORDER BY admissions DESC;
 ====================================================
 Question 2
 
-What is the distribution of mortality-risk categories?
+Which mortality risk categories generate
+the highest treatment charges?
 
 Business Value:
-Provides an overview of mortality risk
-across all admissions.
+Evaluates the financial impact of
+different mortality risk groups.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     apr_risk_of_mortality,
-    SUM(admissions) AS admissions
+    total_charges
+
 FROM analytics.v_risk_analysis
-GROUP BY apr_risk_of_mortality
-ORDER BY admissions DESC;
+
+ORDER BY total_charges DESC;
+
 
 
 /*
 ====================================================
 Question 3
 
-Which severity categories generate the
-highest total costs?
+Which severity levels incur the
+highest treatment costs?
 
 Business Value:
-Identifies which patient complexity levels
-consume the most healthcare resources.
+Identifies patient groups consuming
+the greatest healthcare resources.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     apr_severity_of_illness_description,
-    SUM(total_costs) AS total_costs
+    total_costs
+
 FROM analytics.v_risk_analysis
-GROUP BY apr_severity_of_illness_description
+
 ORDER BY total_costs DESC;
 
 
@@ -86,20 +93,28 @@ ORDER BY total_costs DESC;
 ====================================================
 Question 4
 
-Which severity categories generate the
-highest total charges?
+Which mortality risk categories have
+the longest average length of stay?
 
 Business Value:
-Measures revenue contribution by severity level.
+Measures hospital resource utilization
+across mortality risk groups.
 ====================================================
 */
 
 SELECT
-    apr_severity_of_illness_description,
-    SUM(total_charges) AS total_charges
+    apr_risk_of_mortality,
+
+    ROUND(
+        AVG(avg_los),
+        2
+    ) AS avg_length_of_stay
+
 FROM analytics.v_risk_analysis
-GROUP BY apr_severity_of_illness_description
-ORDER BY total_charges DESC;
+
+GROUP BY apr_risk_of_mortality
+
+ORDER BY avg_length_of_stay DESC;
 
 
 
@@ -107,21 +122,36 @@ ORDER BY total_charges DESC;
 ====================================================
 Question 5
 
-Which severity categories have the
-longest average length of stay?
+Which severity levels have an
+above-average length of stay?
 
 Business Value:
-Identifies severity levels associated with
-extended hospitalization.
+Identifies high-risk patient groups
+requiring longer hospitalization than
+the overall average.
 ====================================================
 */
 
 SELECT
     apr_severity_of_illness_description,
-    ROUND(AVG(avg_los),2) AS avg_los
+
+    ROUND(
+        AVG(avg_los),
+        2
+    ) AS avg_length_of_stay
+
 FROM analytics.v_risk_analysis
+
 GROUP BY apr_severity_of_illness_description
-ORDER BY avg_los DESC;
+
+HAVING
+    AVG(avg_los) >
+(
+    SELECT AVG(avg_los)
+    FROM analytics.v_risk_analysis
+)
+
+ORDER BY avg_length_of_stay DESC;
 
 
 
@@ -129,20 +159,31 @@ ORDER BY avg_los DESC;
 ====================================================
 Question 6
 
-Which mortality-risk categories generate
-the highest total costs?
+How do severity levels rank by
+hospital admissions each year?
 
 Business Value:
-Measures resource utilization by mortality risk.
+Ranks patient severity groups according
+to annual healthcare demand.
 ====================================================
 */
 
 SELECT
-    apr_risk_of_mortality,
-    SUM(total_costs) AS total_costs
+    discharge_year,
+    apr_severity_of_illness_description,
+    admissions,
+
+    RANK() OVER
+    (
+        PARTITION BY discharge_year
+        ORDER BY admissions DESC
+    ) AS admission_rank
+
 FROM analytics.v_risk_analysis
-GROUP BY apr_risk_of_mortality
-ORDER BY total_costs DESC;
+
+ORDER BY
+    discharge_year,
+    admission_rank;
 
 
 
@@ -150,99 +191,27 @@ ORDER BY total_costs DESC;
 ====================================================
 Question 7
 
-Which mortality-risk categories generate
-the highest total charges?
+How are mortality risk categories
+segmented based on treatment costs?
 
 Business Value:
-Measures revenue contribution by mortality risk.
+Groups mortality risk categories into
+cost tiers for financial planning and
+resource allocation.
 ====================================================
 */
 
 SELECT
     apr_risk_of_mortality,
-    SUM(total_charges) AS total_charges
+    total_costs,
+
+    NTILE(4) OVER
+    (
+        ORDER BY total_costs DESC
+    ) AS cost_quartile
+
 FROM analytics.v_risk_analysis
-GROUP BY apr_risk_of_mortality
-ORDER BY total_charges DESC;
 
-
-
-/*
-====================================================
-Question 8
-
-Which mortality-risk categories have the
-longest average length of stay?
-
-Business Value:
-Identifies mortality-risk groups associated
-with prolonged hospitalization.
-====================================================
-*/
-
-SELECT
-    apr_risk_of_mortality,
-    ROUND(AVG(avg_los),2) AS avg_los
-FROM analytics.v_risk_analysis
-GROUP BY apr_risk_of_mortality
-ORDER BY avg_los DESC;
-
-
-
-/*
-====================================================
-Question 9
-
-What percentage of admissions are classified
-as Extreme Severity?
-
-Business Value:
-Measures prevalence of highly complex cases.
-====================================================
-*/
-
-SELECT
-    ROUND(
-        100.0 *
-        SUM(
-            CASE
-                WHEN apr_severity_of_illness_description = 'Extreme'
-                THEN admissions
-                ELSE 0
-            END
-        )
-        /
-        SUM(admissions),
-        2
-    ) AS extreme_severity_percent
-FROM analytics.v_risk_analysis;
-
-
-
-/*
-====================================================
-Question 10
-
-What percentage of admissions are classified
-as Extreme Mortality Risk?
-
-Business Value:
-Measures prevalence of critically high-risk patients.
-====================================================
-*/
-
-SELECT
-    ROUND(
-        100.0 *
-        SUM(
-            CASE
-                WHEN apr_risk_of_mortality = 'Extreme'
-                THEN admissions
-                ELSE 0
-            END
-        )
-        /
-        SUM(admissions),
-        2
-    ) AS extreme_mortality_percent
-FROM analytics.v_risk_analysis;
+ORDER BY
+    cost_quartile,
+    total_costs DESC;

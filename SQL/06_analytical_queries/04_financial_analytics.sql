@@ -7,13 +7,12 @@ Domain:
 Healthcare Financial Performance Analysis
 
 Purpose:
-Analyze payer mix, charges, costs,
-resource utilization, and financial efficiency.
+Analyze payer mix, revenue, costs,
+financial efficiency, and resource
+utilization.
 
 Data Source:
 analytics.v_financial_summary
-analytics.v_financial_detail
-
 ====================================================
 */
 
@@ -22,20 +21,31 @@ analytics.v_financial_detail
 ====================================================
 Question 1
 
-Which payer categories generate the highest
-total charges?
+Which payer categories generate the
+highest total revenue?
 
 Business Value:
-Identifies the largest revenue-generating
-payer categories.
+Identifies the primary sources of
+healthcare revenue.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     payment_typology_1,
-    total_charges
+
+    ROUND(
+        SUM(total_charges),
+        2
+    ) AS total_revenue
+
 FROM analytics.v_financial_summary
-ORDER BY total_charges DESC;
+
+GROUP BY
+    discharge_year,
+    payment_typology_1
+
+ORDER BY total_revenue DESC;
 
 
 
@@ -43,19 +53,30 @@ ORDER BY total_charges DESC;
 ====================================================
 Question 2
 
-Which payer categories generate the highest
-total costs?
+Which payer categories incur the
+highest healthcare costs?
 
 Business Value:
-Identifies payer categories consuming
-the most healthcare resources.
+Identifies payer groups consuming
+the greatest healthcare resources.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     payment_typology_1,
-    total_costs
+
+    ROUND(
+        SUM(total_costs),
+        2
+    ) AS total_costs
+
 FROM analytics.v_financial_summary
+
+GROUP BY
+    discharge_year,
+    payment_typology_1
+
 ORDER BY total_costs DESC;
 
 
@@ -64,20 +85,32 @@ ORDER BY total_costs DESC;
 ====================================================
 Question 3
 
-Which payer categories have the highest
-average charge per admission?
+Which payer categories achieve the
+highest financial efficiency?
 
 Business Value:
-Measures financial intensity of patients
-covered by each payer category.
+Measures revenue generated for every
+dollar spent on patient care.
 ====================================================
 */
 
 SELECT
+    discharge_year,
     payment_typology_1,
-    avg_charge
+
+    ROUND(
+        SUM(total_charges) /
+        NULLIF(SUM(total_costs),0),
+        2
+    ) AS charge_cost_ratio
+
 FROM analytics.v_financial_summary
-ORDER BY avg_charge DESC;
+
+GROUP BY
+    discharge_year,
+    payment_typology_1
+
+ORDER BY charge_cost_ratio DESC;
 
 
 
@@ -85,67 +118,30 @@ ORDER BY avg_charge DESC;
 ====================================================
 Question 4
 
-Which payer categories have the highest
-average cost per admission?
+Which payer categories generate the
+largest financial surplus?
 
 Business Value:
-Identifies payer categories associated
-with expensive patient care.
+Measures the financial contribution
+of each payer category.
 ====================================================
 */
 
 SELECT
-    payment_typology_1,
-    avg_cost
-FROM analytics.v_financial_summary
-ORDER BY avg_cost DESC;
-
-
-
-/*
-====================================================
-Question 5
-
-Which payer categories have the highest
-charge-to-cost ratio?
-
-Business Value:
-Measures financial efficiency across
-payer categories.
-====================================================
-*/
-
-SELECT
-    payment_typology_1,
-    charge_cost_ratio
-FROM analytics.v_financial_summary
-ORDER BY charge_cost_ratio DESC;
-
-
-
-/*
-====================================================
-Question 6
-
-Which payer categories generate the highest total profit proxy
-(Charges - Costs)?
-
-Business Value:
-Identifies payer categories associated with the largest financial surplus.
-====================================================
-*/
-
-SELECT
+    discharge_year,
     payment_typology_1,
 
     ROUND(
-        SUM(total_charges) - SUM(total_costs),
+        SUM(total_charges) -
+        SUM(total_costs),
         2
     ) AS financial_surplus
 
-FROM analytics.v_financial_detail
+FROM analytics.v_financial_summary
 
-GROUP BY payment_typology_1
+GROUP BY
+    discharge_year,
+    payment_typology_1
 
 ORDER BY financial_surplus DESC;
 
@@ -153,119 +149,135 @@ ORDER BY financial_surplus DESC;
 
 /*
 ====================================================
+Question 5
+
+Which payer categories have above-average
+treatment costs?
+
+Business Value:
+Identifies payer groups whose costs
+exceed the overall average.
+====================================================
+*/
+
+SELECT
+    payment_typology_1,
+
+    ROUND(
+        AVG(total_costs),
+        2
+    ) AS avg_cost
+
+FROM analytics.v_financial_summary
+
+GROUP BY payment_typology_1
+
+HAVING
+    AVG(total_costs) >
+    (
+        SELECT AVG(total_costs)
+        FROM analytics.v_financial_summary
+    )
+
+ORDER BY avg_cost DESC;
+
+
+
+/*
+====================================================
+Question 6
+
+How do payer categories rank by
+financial surplus each year?
+
+Business Value:
+Ranks payer categories according to
+their annual financial contribution.
+====================================================
+*/
+
+WITH payer_summary AS
+(
+    SELECT
+        discharge_year,
+        payment_typology_1,
+
+        SUM(total_charges) -
+        SUM(total_costs) AS financial_surplus
+
+    FROM analytics.v_financial_summary
+
+    GROUP BY
+        discharge_year,
+        payment_typology_1
+)
+
+SELECT
+    discharge_year,
+    payment_typology_1,
+
+    ROUND(financial_surplus,2) AS financial_surplus,
+
+    RANK() OVER
+    (
+        PARTITION BY discharge_year
+        ORDER BY financial_surplus DESC
+    ) AS surplus_rank
+
+FROM payer_summary
+
+ORDER BY
+    discharge_year,
+    surplus_rank;
+
+
+
+/*
+====================================================
 Question 7
 
-Which payer categories have the longest
-average length of stay?
+How have total charges changed over
+time for each payer category?
 
 Business Value:
-Identifies payer categories associated
-with prolonged patient care.
+Measures year-over-year revenue
+growth across payer categories.
 ====================================================
 */
 
+WITH yearly_revenue AS
+(
+    SELECT
+        discharge_year,
+        payment_typology_1,
+
+        SUM(total_charges) AS total_revenue
+
+    FROM analytics.v_financial_summary
+
+    GROUP BY
+        discharge_year,
+        payment_typology_1
+)
+
 SELECT
+    discharge_year,
     payment_typology_1,
 
-    ROUND(
-        AVG(length_of_stay_days),
-        2
-    ) AS avg_los
-
-FROM analytics.v_financial_detail
-
-GROUP BY payment_typology_1
-
-ORDER BY avg_los DESC;
-
-
-
-/*
-====================================================
-Question 8
-
-Which age groups generate the highest
-Medicare costs?
-
-Business Value:
-Evaluates cost burden of Medicare
-across patient age groups.
-====================================================
-*/
-
-SELECT
-    age_group,
+    ROUND(total_revenue,2) AS total_revenue,
 
     ROUND(
-        SUM(total_costs),
+        total_revenue -
+        LAG(total_revenue) OVER
+        (
+            PARTITION BY payment_typology_1
+            ORDER BY discharge_year
+        ),
         2
-    ) AS total_costs
+    ) AS revenue_growth
 
-FROM analytics.v_financial_detail
+FROM yearly_revenue
 
-WHERE payment_typology_1 = 'Medicare'
-
-GROUP BY age_group
-
-ORDER BY total_costs DESC;
-
-
-
-/*
-====================================================
-Question 9
-
-Which regions generate the highest
-Medicaid costs?
-
-Business Value:
-Identifies geographic concentration
-of Medicaid spending.
-====================================================
-*/
-
-SELECT
-    health_service_area,
-
-    ROUND(
-        SUM(total_costs),
-        2
-    ) AS total_costs
-
-FROM analytics.v_financial_detail
-
-WHERE payment_typology_1 = 'Medicaid'
-
-GROUP BY health_service_area
-
-ORDER BY total_costs DESC;
-
-
-
-/*
-====================================================
-Question 10
-
-Which payer categories have the highest
-average cost per admission?
-
-Business Value:
-Measures resource utilization intensity
-across payer categories.
-====================================================
-*/
-
-SELECT
+ORDER BY
     payment_typology_1,
-
-    ROUND(
-        SUM(total_costs) /
-        NULLIF(COUNT(*),0),
-        2
-    ) AS avg_cost_per_admission
-
-FROM analytics.v_financial_detail
-
-GROUP BY payment_typology_1
-
-ORDER BY avg_cost_per_admission DESC;
+    discharge_year;

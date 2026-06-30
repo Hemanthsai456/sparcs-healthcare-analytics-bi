@@ -45,9 +45,9 @@ VALUES (
     0,
     'UNKNOWN',
     'Unknown',
-    NULL,
+    -1,
     'Unknown',
-    NULL,
+    -1,
     'Unknown'
 );
 
@@ -71,7 +71,7 @@ INSERT INTO warehouse.dim_severity (
 )
 VALUES (
     0,
-    NULL,
+    -1,
     'Unknown',
     'Unknown',
     'Unknown'
@@ -102,3 +102,6 @@ VALUES (
     'Unknown',
     'Unknown'
 );
+
+INSERT INTO warehouse.dim_date(date_key, discharge_year)
+VALUES (0,0);

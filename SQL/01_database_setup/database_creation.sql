@@ -1,1 +1,1 @@
-CREATE DATABASE healthcare_bi;
+CREATE DATABASE healthcare_analytics_v2;

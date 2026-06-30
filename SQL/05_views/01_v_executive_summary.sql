@@ -2,6 +2,8 @@ CREATE OR REPLACE VIEW analytics.v_executive_summary AS
 
 SELECT
 
+    dt.discharge_year,
+
     COUNT(*) AS total_admissions,
 
     ROUND(SUM(total_charges),2) AS total_charges,
@@ -62,4 +64,9 @@ JOIN warehouse.dim_severity s
     ON f.severity_key = s.severity_key
 
 JOIN warehouse.dim_admission a
-    ON f.admission_key = a.admission_key;
+    ON f.admission_key = a.admission_key
+    
+JOIN warehouse.dim_date dt
+    ON f.date_key = dt.date_key
+    
+GROUP BY dt.discharge_year;
