@@ -11,8 +11,8 @@ INSERT INTO staging.etl_load_history
 )
 VALUES
 (
-    2021,
-    'sparcs_2021_raw.csv',
+    20xx,
+    'sparcs_20xx_raw.csv',
 
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP,
@@ -21,7 +21,7 @@ VALUES
 
     (SELECT COUNT(*)
      FROM warehouse.fact_discharge
-     WHERE date_key = 2021),
+     WHERE date_key = 20xx),
 
     (SELECT COUNT(*)
      FROM warehouse.fact_discharge),
