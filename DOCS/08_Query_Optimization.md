@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The Healthcare Analytics & Business Intelligence System was designed to support analytical queries over more than **16 million inpatient discharge records**.
+The SPARCS Healthcare BI Platform was designed to support analytical queries over more than **16 million inpatient discharge records**.
 
 To improve query performance, the warehouse combines indexing, execution plan analysis, and materialized views while preserving a simple and maintainable warehouse design.
 

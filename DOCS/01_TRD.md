@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This document defines the technical requirements, architecture objectives, and implementation guidelines for the Healthcare Analytics & Business Intelligence System.
+This document defines the technical requirements, architecture objectives, and implementation guidelines for the SPARCS Healthcare BI Platform.
 
 The project transforms New York State SPARCS inpatient discharge data into a scalable dimensional data warehouse capable of supporting healthcare analytics, SQL reporting, and interactive business intelligence dashboards.
 
@@ -12,7 +12,7 @@ This document serves as a technical reference for the system implementation, cov
 
 ## 2. Project Overview
 
-The Healthcare Analytics & Business Intelligence System is an end-to-end data engineering and business intelligence solution built using PostgreSQL and Power BI.
+The SPARCS Healthcare BI Platform is an end-to-end data engineering and business intelligence solution built using PostgreSQL and Power BI.
 
 The system consolidates seven years of New York State SPARCS inpatient discharge data (2011, 2012, 2014, 2018, 2021, 2023, and 2024) into a dimensional data warehouse designed for analytical reporting rather than transactional processing.
 

@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The Healthcare Analytics & Business Intelligence System includes eight interactive Power BI dashboard pages designed to support executive reporting and domain-specific healthcare analysis.
+The SPARCS Healthcare BI Platform includes eight interactive Power BI dashboard pages designed to support executive reporting and domain-specific healthcare analysis.
 
 The dashboards are built directly on the dimensional warehouse using Power BI Import Mode, ensuring consistent KPI calculations and interactive filtering across all reports.
 

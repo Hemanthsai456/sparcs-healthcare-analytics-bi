@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This document defines the dimensional data model implemented within the Healthcare Analytics & Business Intelligence System.
+This document defines the dimensional data model implemented within the SPARCS Healthcare BI Platform.
 
 It serves as a reference for the warehouse schema by describing each table, its purpose, key relationships, and column definitions.
 

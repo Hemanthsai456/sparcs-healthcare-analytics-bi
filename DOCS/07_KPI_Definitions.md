@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This document defines the Key Performance Indicators (KPIs) used throughout the Healthcare Analytics & Business Intelligence System.
+This document defines the Key Performance Indicators (KPIs) used throughout the SPARCS Healthcare BI Platform.
 
 Each KPI has a standardized definition to ensure consistent calculations across SQL analytics, materialized views, and Power BI dashboards.
 

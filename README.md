@@ -1,4 +1,4 @@
-# 🏥 Healthcare Analytics & Business Intelligence System
+# 🏥 # 🏥 SPARCS Healthcare BI Platform
 
 A production-style healthcare analytics platform built with PostgreSQL 18 and Power BI, integrating 7 years of NYS SPARCS inpatient discharge data (16.3M+ records) into a governed dimensional warehouse and 8 executive-ready dashboard pages.
 
@@ -177,7 +177,7 @@ Detailed technical and business documentation lives in [`/DOCS`](DOCS/), includi
 ## 📁 Repository Structure
 
 ```text
-Healthcare-Analytics-BI-System/
+# sparcs-healthcare-bi-platform/
 │
 ├── data/          # Dataset source & data dictionary
 ├── DOCS/          # Technical & business documentation
@@ -209,4 +209,4 @@ Possible directions to extend this platform further:
 - **SQL Warehouse & Analytics:** [`/SQL`](SQL/)
 
 **GitHub:** [HemanthSai456](https://github.com/HemanthSai456)  
-**LinkedIn:** [Hemanth Sai Charagundla](https://www.linkedin.com/in/hemanth-sai-charagundla-4a8659376/)
+**LinkedIn:** [Hemanth Sai Charagundla](https://www.linkedin.com/in/hemanthsai456)

@@ -2,13 +2,13 @@
 
 ## Project Title
 
-**Healthcare Analytics & Business Intelligence System Using New York SPARCS Hospital Inpatient Discharge Data**
+**SPARCS Healthcare BI Platform Using New York SPARCS Hospital Inpatient Discharge Data**
 
 ---
 
 ## 1. Overview
 
-The Healthcare Analytics & Business Intelligence System follows a layered data warehouse architecture designed to transform raw healthcare discharge records into business-ready analytical assets.
+The SPARCS Healthcare BI Platform follows a layered data warehouse architecture designed to transform raw healthcare discharge records into business-ready analytical assets.
 
 Rather than querying raw source files directly, the system separates data ingestion, transformation, storage, reporting, and visualization into independent layers. This approach improves maintainability, scalability, and reporting consistency while allowing the warehouse to grow as additional dataset years become available.
 

@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The Healthcare Analytics & Business Intelligence System uses a dimensional ETL pipeline to transform raw SPARCS inpatient discharge datasets into a centralized analytical warehouse.
+The SPARCS Healthcare BI Platform uses a dimensional ETL pipeline to transform raw SPARCS inpatient discharge datasets into a centralized analytical warehouse.
 
 The ETL process follows a layered architecture that separates data ingestion, transformation, warehouse loading, validation, and reporting. This approach improves maintainability, supports multi-year data integration, and enables consistent business reporting across SQL and Power BI.
 
